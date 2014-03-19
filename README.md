@@ -11,6 +11,42 @@ install the code:
 ```bash
 git clone https://github.com/mszel-blackbirdit/mukka
 ```
+#### [mt-rds-diff.pl] (https://github.com/mszel-blackbirdit/mukka/blob/master/mt-rds-diff.pl)
+
+**DESCRIPTON:**
+
+The script will print the difference between the settings of the currently running MySQL instance and the Parameter Group config. It's useful when the RDS instance in Paramter Group(Pending Reboot) but you don't know what Paramter Group options have changed. 
+
+EXAMPLE:
+$0 rds_mysql_config rds_pg_config  
+
+**IMPACT:**
+NONE, it compares two config files
+
+**INPUT:**
+Save MySQL config from the RDS instances with:
+mysql --batch --skip-column-names -h rds_hostname -u username -p -e "show global variables" >rds_mysql_config
+
+Save RDS Parameter Group settings:
+rds-describe-db-parameters [--region rds_region] --db-parameter-group-name param_group_name --source user --show-long >rds_pg_config
+
+**OUTPUT:**
+```
+Setting name                        MySQL value                      RDS Parameter Group value
+general_log                         OFF                              ON
+long_query_time                     0.000000                         3
+
+```
+[vagrant@vagrant-centos65 mukka]$ ./mt-show-all-myisam.pl
+
+===== MyISAM Tables without FULLTEXT indexes =====
+ALTER TABLE test.test2 engine=INNODB;
+ALTER TABLE test.gezemice engine=INNODB;
+ALTER TABLE test.morenbuk engine=INNODB;
+
+===== MyISAM Tables with FULLTEXT indexes =====
+test.searchindex
+```
 
 
 #### [mt-show-all-myisam.pl] (https://github.com/mszel-blackbirdit/mukka/blob/master/mt-show-all-myisam.pl)
