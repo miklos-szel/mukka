@@ -8,14 +8,15 @@ if ( ($mysql_output eq "") or ($rds_output eq "") ){
     print <<EOF;
 The script will print the difference between the settings of the currently running MySQL instance and the Parameter Group config. It's useful when the RDS instance in Paramter Group(Pending Reboot) but you don't know what Paramter Group options have changed. 
 
-USAGE:
 Save MySQL config from the RDS instances with:
 mysql --batch --skip-column-names -h rds_hostname -u username -p -e "show global variables" >rds_mysql_config
 
 Save RDS Parameter Group settings:
-ds-describe-db-parameters [--region rds_region] --db-parameter-group-name param_group_name --source user --show-long >rds_pg_config
+rds-describe-db-parameters [--region rds_region] --db-parameter-group-name param_group_name --source user --show-long >rds_pg_config
 
-"USAGE: $0 rds_mysql_config rds_pg_config  
+EXAMPLE:
+$0 rds_mysql_config rds_pg_config  
+
 EOF
 exit 1;
 }
