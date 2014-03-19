@@ -23,10 +23,14 @@ NONE, it compares two config files
 
 **INPUT:**
 Save MySQL config from the RDS instances with:
+```
 mysql --batch --skip-column-names -h rds_hostname -u username -p -e "show global variables" >rds_mysql_config
+````
 
 Save RDS Parameter Group settings:
+```
 rds-describe-db-parameters [--region rds_region] --db-parameter-group-name param_group_name --source user --show-long >rds_pg_config
+```
 
 **OUTPUT:**
 ```
