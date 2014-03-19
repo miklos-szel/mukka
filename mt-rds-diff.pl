@@ -12,7 +12,7 @@ Save MySQL config from the RDS instances with:
 mysql --batch --skip-column-names -h rds_hostname -u username -p -e "show global variables" >rds_mysql_config
 
 Save RDS Parameter Group settings:
-rds-describe-db-parameters [--region rds_region] --db-parameter-group-name param_group_name --source user --show-long >rds_pg_config
+rds-describe-db-parameters [--region rds_region] --db-parameter-group-name param_group_name --source user --show-long --delimiter '#' >rds_pg_config
 
 EXAMPLE:
 $0 rds_mysql_config rds_pg_config  
@@ -38,7 +38,7 @@ open RDS, $rds_output or die;
 while (my $rds_line=<RDS>) {
     chomp($rds_line);
     ##print $rds_line,"\n";
-    my @fields = split(/,/, $rds_line);
+    my @fields = split(/#/, $rds_line);
     $fields[2] = "ON" if $fields[2] eq "1" and $fields[5] ne "float";
     $fields[2] = "OFF" if $fields[2] eq "0" and $fields[5] ne "float";
 
