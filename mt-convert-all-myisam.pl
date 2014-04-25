@@ -52,7 +52,7 @@ options:
 IMPACT: It WON'T MAKE ANY CHANGES just print hints however accessing table statistics require opening the tables 
 
 example:
-./mt-convert-all-myisam.pl --dry-run --user=review --passwd=xxx --host=127.0.0.1 --port=3336
+./mt-convert-all-myisam.pl --execute --user=review --passwd=xxx --host=127.0.0.1 --port=3336
 EOF
 exit 1;
 }
