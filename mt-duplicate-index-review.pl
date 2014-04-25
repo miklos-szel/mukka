@@ -6,7 +6,7 @@ use Getopt::Long;
 #http://www.mysqlperformanceblog.com/2011/12/23/solving-information_schema-slowness/
 
 my $mysql_exe=`which mysql`;
-#my $pt_dk="/home/vagrant/percona-toolkit-2.2.7/bin/pt-duplicate-key-checker";
+#my $pt_dk="/home/mszel/percona-toolkit-2.2.7/bin/pt-duplicate-key-checker";
 my $pt_dk=`which pt-duplicate-key-checker`;
 chomp($mysql_exe);
 chomp($pt_dk);
@@ -57,7 +57,7 @@ exit 1;
 }
 
 
-my @dk_nc=`$pt_dk --no-cluster|grep ALTER`;
+my @dk_nc=`$pt_dk h=$mysql_host,u=$mysql_user,p=$mysql_passwd,P=$mysql_port --no-cluster|grep ALTER`;
 #my @dk_c=`$pt_dk --cluster|grep "ADD INDEX"`;
 print "DB,TABLE,REDUNDANT INDEX NAME,TABLE DATA SIZE[MB],TABLE INDEX SIZE[MB],NUM ROWS,RECOMMENDED METHOD\n" if $report == 1;
 
