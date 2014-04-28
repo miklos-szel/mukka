@@ -6,7 +6,7 @@ use Getopt::Long;
 #http://www.mysqlperformanceblog.com/2011/12/23/solving-information_schema-slowness/
 
 my $mysql_exe=`which mysql`;
-#my $pt_dk="/home/mszel/percona-toolkit-2.2.7/bin/pt-duplicate-key-checker";
+#my $pt_dk="/home/vagrant/percona-toolkit-2.2.7/bin/pt-duplicate-key-checker";
 my $pt_dk=`which pt-duplicate-key-checker`;
 chomp($mysql_exe);
 chomp($pt_dk);
@@ -59,7 +59,7 @@ exit 1;
 
 my @dk_nc=`$pt_dk h=$mysql_host,u=$mysql_user,p=$mysql_passwd,P=$mysql_port --no-cluster|grep ALTER`;
 #my @dk_c=`$pt_dk --cluster|grep "ADD INDEX"`;
-print "DB,TABLE,REDUNDANT INDEX NAME,TABLE DATA SIZE[MB],TABLE INDEX SIZE[MB],NUM ROWS,RECOMMENDED METHOD\n" if $report == 1;
+print "DB,TABLE,REDUNDANT INDEX NAME,TABLE DATA SIZE[MB],TABLE INDEX SIZE[MB],NUM ROWS,RECOMMENDED METHOD,Comment\n" if $report == 1;
 
 foreach my $index (@dk_nc){
 	if ($index =~ /^ALTER TABLE \`([\w]+?)\`\.\`([\w]+)\` DROP INDEX \`([\w]+)\`;$/i) {
@@ -72,9 +72,11 @@ foreach my $index (@dk_nc){
         }
 
 	    if ( (($data_size+$index_size) >= $data_size_limit) or ($num_rows >= $num_rows_limit) ){
-		print "$curr_db,$curr_table,$curr_index,$data_size,$index_size,$num_rows,PT-OSC\n";
-	    }else{
-			print "$curr_db,$curr_table,$curr_index,$data_size,$index_size,$num_rows,ALTER TABLE\n";
+		   	my $fks = &get_fk_for_table($curr_db,$curr_table); 
+			print "$curr_db,$curr_table,$curr_index,$data_size,$index_size,$num_rows,PT-OSC,$fks\n";
+	            
+        }else{
+			print "$curr_db,$curr_table,$curr_index,$data_size,$index_size,$num_rows,ALTER TABLE,-\n";
 		}
     }
 }
@@ -87,4 +89,16 @@ sub get_table_size{
 	chomp ($size);
 	my ($data_size,$index_size,$num_rows) = split (/\t/, $size);
 	return ($data_size,$index_size,$num_rows);
+}
+
+sub get_fk_for_table{
+    my $db      = shift;
+    my $table   = shift;
+    
+    my $sql_fk="select CONCAT(CONSTRAINT_SCHEMA ,'.', CONSTRAINT_NAME, ';') FROM information_schema.key_column_usage  WHERE referenced_table_schema = '$db' and referenced_table_name = '$table';";
+    my @fks=`$mysql_exe --user $mysql_user --password=\"$mysql_passwd\" --host $mysql_host --port  $mysql_port --skip-column-names -e "$sql_fk" `;
+    chomp(@fks);
+    my $list = join (/\n/, @fks);
+    return "Foreign Keys:".$list;
+
 }
