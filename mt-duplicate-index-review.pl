@@ -23,6 +23,7 @@ my $execute=0;
 my $report=0;
 my $table;
 my ($data_size,$index_size,$num_rows);
+my $fk;
 
 GetOptions ("user=s"                   => \$mysql_user,
             "password=s"               => \$mysql_passwd,
@@ -69,10 +70,11 @@ foreach my $index (@dk_nc){
         if ($2 ne $table){
 		    ($data_size,$index_size,$num_rows) = &get_table_size($curr_db,$curr_table);
             $table = $2;
+            $fks = &get_fk_for_table($curr_db,$curr_table); 
         }
 
 	    if ( (($data_size+$index_size) >= $data_size_limit) or ($num_rows >= $num_rows_limit) ){
-		   	my $fks = &get_fk_for_table($curr_db,$curr_table); 
+		   	
 			print "$curr_db,$curr_table,$curr_index,$data_size,$index_size,$num_rows,PT-OSC,$fks\n";
 	            
         }else{
@@ -99,6 +101,6 @@ sub get_fk_for_table{
     my @fks=`$mysql_exe --user $mysql_user --password=\"$mysql_passwd\" --host $mysql_host --port  $mysql_port --skip-column-names -e "$sql_fk" `;
     chomp(@fks);
     my $list = join (/\n/, @fks);
-    return "Foreign Keys:".$list;
+    return $list;
 
 }
