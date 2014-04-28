@@ -23,7 +23,7 @@ my $execute=0;
 my $report=0;
 my $table;
 my ($data_size,$index_size,$num_rows);
-my $fk;
+my $fks;
 
 GetOptions ("user=s"                   => \$mysql_user,
             "password=s"               => \$mysql_passwd,
