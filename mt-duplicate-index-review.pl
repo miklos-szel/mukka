@@ -60,7 +60,7 @@ exit 1;
 
 my @dk_nc=`$pt_dk h=$mysql_host,u=$mysql_user,p=$mysql_passwd,P=$mysql_port --no-cluster|grep ALTER`;
 #my @dk_c=`$pt_dk --cluster|grep "ADD INDEX"`;
-print "DB,TABLE,REDUNDANT INDEX NAME,TABLE DATA SIZE[MB],TABLE INDEX SIZE[MB],NUM ROWS,RECOMMENDED METHOD,Comment\n" if $report == 1;
+print "DB,TABLE,REDUNDANT INDEX NAME,TABLE DATA SIZE[MB],TABLE INDEX SIZE[MB],NUM ROWS,RECOMMENDED METHOD,FOREIGN KEYS\n" if $report == 1;
 
 foreach my $index (@dk_nc){
 	if ($index =~ /^ALTER TABLE \`([\w]+?)\`\.\`([\w]+)\` DROP INDEX \`([\w]+)\`;$/i) {
