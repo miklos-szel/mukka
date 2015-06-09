@@ -46,10 +46,10 @@ options:
 --port              MySQL port     [default: 3306]
 --data-size-limit   if data+index size of the table exceeds this value in MB the script will advise using pt-online-schema-change [default:100]
 --num-rows-limit    if table size exceeds this value the script will advise using pt-online-schema-change [default:500000]
---execute           without this the script only print this help screen   
---report            instead of printing the commands it generate a csv available for making reports   
+--execute           without this the script only print this help screen
+--report            instead of printing the commands it generate a csv available for making reports
 
-IMPACT: It WON'T MAKE ANY CHANGES just print hints however accessing table statistics require opening the tables 
+IMPACT: It WON'T MAKE ANY CHANGES just print hints however accessing table statistics require opening the tables
 
 example:
 ./mt-convert-all-myisam.pl --execute --user=review --passwd=xxx --host=127.0.0.1 --port=3336
@@ -58,21 +58,23 @@ exit 1;
 }
 
 my $table_stats_sql = <<END;
-SELECT table_schema, 
-       table_name, 
-       table_rows, 
-       ROUND( ( ( data_length + index_length ) / ( 1024 * 1024 ) ),2)
-FROM   information_schema.tables 
-WHERE  engine = 'MyISAM' 
-       AND table_schema != 'information_schema' 
-       AND table_schema != 'mysql' 
-       AND Concat(table_schema, '.', table_name) NOT IN 
-           (SELECT 
-           Concat(table_schema, '.', table_name) 
-                                                         FROM 
-               information_schema.statistics 
-                                                         WHERE 
-           index_type = 'fulltext') 
+SELECT table_schema,
+       table_name,
+       table_rows,
+	ROUND( ( data_length   / ( 1024 * 1024 ) ),2),
+	ROUND( ( index_length  / ( 1024 * 1024 ) ),2),
+	ROUND( ( ( data_length + index_length ) / ( 1024 * 1024 ) ),2)
+FROM   information_schema.tables
+WHERE  engine = 'MyISAM'
+       AND table_schema != 'information_schema'
+       AND table_schema != 'mysql'
+       AND Concat(table_schema, '.', table_name) NOT IN
+           (SELECT
+           Concat(table_schema, '.', table_name)
+                                                         FROM
+               information_schema.statistics
+                                                         WHERE
+           index_type = 'fulltext')
 ORDER BY data_length + index_length DESC;
 END
 
@@ -94,18 +96,18 @@ WHERE  engine = 'MyISAM'
 
 my @table_stats_raw=`$mysql_exe --user $mysql_user --password=\"$mysql_passwd\" --host $mysql_host --port  $mysql_port --skip-column-names -e "$table_stats_sql" `;
 foreach my $line (@table_stats_raw) {
-    my ($db, $table, $num_rows, $data_size) = split(/\t/, $line);
-    chomp ($db, $table, $num_rows, $data_size);
+    my ($db, $table, $num_rows, $data_size,$index_size,$total_size) = split(/\t/, $line);
+    chomp ($db, $table, $num_rows, $data_size,$index_size,$total_size);
     if ( ($data_size >= $data_size_limit) or ($num_rows >= $num_rows_limit) ){
             #push @report, "$db,$table,$num_rows,$data_size,\"pt-online-schema-change  --dry-run --alter 'ENGINE=InnoDB' D=$db,t=$table,h=$mysql_host\"\n";
-            push @report_ptosc, "$db,$table,$num_rows,$data_size,PT-OSC\n";
+            push @report_ptosc, "$db,$table,$num_rows,${data_size}MB,${index_size}MB,${total_size}M,PT-OSC\n";
             push @ptosc, "#Table size: $data_size [limit: $data_size_limit]\n#Number of rows: $num_rows [limit:$num_rows_limit]\n#using pt-osc is recommended\n";
             push @ptosc, "pt-online-schema-change  --execute --alter 'ENGINE=InnoDB' D=$db,t=$table,h=$mysql_host\n\n";
            }
     else{
-           push @report_alter, "$db,$table,$num_rows,$data_size,ALTER\n";
+           push @report_alter, "$db,$table,$num_rows,${data_size}MB,${index_size}MB,${total_size}MB,ALTER\n";
            push @alter, "ALTER TABLE $db.$table ENGINE=InnoDB;\n";
-    } 
+    }
 }
 
 my @fulltext_tables=`$mysql_exe --user $mysql_user --password=\"$mysql_passwd\" --host $mysql_host --port  $mysql_port --skip-column-names -e "$myisam_fulltext_sql" `;
@@ -119,7 +121,7 @@ foreach my $line (@fulltext_tables) {
 }
 
 if ( $report == 1 ){
-    print "DB,TABLE,NUMBER OF ROWS, DATA+INDEX SIZE[MB], RECOMMENDED METHOD\n";
+    print "DB,TABLE,ROWS,DATA SIZE,INDEX SIZE,TOTAL SIZE,RECOMMENDED METHOD\n";
     print @report_ptosc;
     print @report_alter;
     print @report_ft;
@@ -128,4 +130,3 @@ if ( $report == 1 ){
     print @alter;
     print @fulltext;
 }
-
