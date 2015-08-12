@@ -39,7 +39,7 @@ GetOptions ("user=s"                   => \$mysql_user,
 or die("Error in command line arguments\n");
 if  ($execute == 0)  {
     print <<EOF;
-The script *prints* the commands necessary to convert all of your MyISAM tables(except mysql,information_schema) to InnoDB. It lists all MyISAM tables with FULLTEXT indexes as well.
+The script *prints* the commands necessary to defragment your tables. It will offer straight OPTIMIZE table or PT-OSC depending on size, number of rows(configurable).
 
 options:
 --user              MySQL username [default: root]
