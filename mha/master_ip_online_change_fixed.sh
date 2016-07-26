@@ -53,6 +53,9 @@ GetOptions(
   'new_master_ssh_user=s'  => \$new_master_ssh_user,
   'orig_master_is_new_slave=s'  => \$orig_master_is_new_slave,
 );
+#getopts escapes the chars like $ which can be present in the password (just as \)
+$orig_master_password =~ s/\\//;
+$new_master_password =~ s/\\//;
 
 exit &main();
 
@@ -130,7 +133,7 @@ sub main {
 
       # args: hostname, port, user, password, raise_error(die_on_error)_or_not
       $new_master_handler->connect( $new_master_ip, $new_master_port,
-        $new_master_user, "$new_master_password", 1 );
+        $new_master_user, $new_master_password, 1 );
       print current_time_us() . " Set read_only on the new master.. ";
       $new_master_handler->enable_read_only();
       if ( $new_master_handler->is_read_only() ) {
@@ -144,34 +147,34 @@ sub main {
       # Connecting to the orig master, die if any database error happens
       my $orig_master_handler = new MHA::DBHelper();
       $orig_master_handler->connect( $orig_master_ip, $orig_master_port,
-        $orig_master_user, "$new_master_password", 1 );
+        $orig_master_user, $orig_master_password, 1 );
 
       ## Drop application user so that nobody can connect. Disabling per-session binlog beforehand
-     ##$orig_master_handler->disable_log_bin_local();
-     ##print current_time_us() . " Drpping app user on the orig master..\n";
-     ##FIXME_xxx_drop_app_user($orig_master_handler);
+      $orig_master_handler->disable_log_bin_local();
+      print current_time_us() . " Drpping app user on the orig master..\n";
+      # FIXME_xxx_drop_app_user($orig_master_handler);
 
       ## Waiting for N * 100 milliseconds so that current connections can exit
-#      my $time_until_read_only = 15;
-#      $_tstart = [gettimeofday];
-#      my @threads = get_threads_util( $orig_master_handler->{dbh},
-#        $orig_master_handler->{connection_id} );
-#      while ( $time_until_read_only > 0 && $#threads >= 0 ) {
-#        if ( $time_until_read_only % 5 == 0 ) {
-#          printf
-#"%s Waiting all running %d threads are disconnected.. (max %d milliseconds)\n",
-#            current_time_us(), $#threads + 1, $time_until_read_only * 100;
-#          if ( $#threads < 5 ) {
-#            print Data::Dumper->new( [$_] )->Indent(0)->Terse(1)->Dump . "\n"
-#              foreach (@threads);
-#          }
-#        }
-#        sleep_until();
-#        $_tstart = [gettimeofday];
-#        $time_until_read_only--;
-#        @threads = get_threads_util( $orig_master_handler->{dbh},
-#          $orig_master_handler->{connection_id} );
-#      }
+      my $time_until_read_only = 15;
+      $_tstart = [gettimeofday];
+      my @threads = get_threads_util( $orig_master_handler->{dbh},
+        $orig_master_handler->{connection_id} );
+      while ( $time_until_read_only > 0 && $#threads >= 0 ) {
+        if ( $time_until_read_only % 5 == 0 ) {
+          printf
+"%s Waiting all running %d threads are disconnected.. (max %d milliseconds)\n",
+            current_time_us(), $#threads + 1, $time_until_read_only * 100;
+          if ( $#threads < 5 ) {
+            print Data::Dumper->new( [$_] )->Indent(0)->Terse(1)->Dump . "\n"
+              foreach (@threads);
+          }
+        }
+        sleep_until();
+        $_tstart = [gettimeofday];
+        $time_until_read_only--;
+        @threads = get_threads_util( $orig_master_handler->{dbh},
+          $orig_master_handler->{connection_id} );
+      }
 
       ## Setting read_only=1 on the current master so that nobody(except SUPER) can write
       print current_time_us() . " Set read_only=1 on the orig master.. ";
@@ -184,32 +187,32 @@ sub main {
       }
 
       ## Waiting for M * 100 milliseconds so that current update queries can complete
-#      my $time_until_kill_threads = 5;
-#      @threads = get_threads_util( $orig_master_handler->{dbh},
-#        $orig_master_handler->{connection_id} );
-#      while ( $time_until_kill_threads > 0 && $#threads >= 0 ) {
-#        if ( $time_until_kill_threads % 5 == 0 ) {
-#          printf
-#"%s Waiting all running %d queries are disconnected.. (max %d milliseconds)\n",
-#            current_time_us(), $#threads + 1, $time_until_kill_threads * 100;
-#          if ( $#threads < 5 ) {
-#            print Data::Dumper->new( [$_] )->Indent(0)->Terse(1)->Dump . "\n"
-#              foreach (@threads);
-#          }
-#        }
-#        sleep_until();
-#        $_tstart = [gettimeofday];
-#        $time_until_kill_threads--;
-#        @threads = get_threads_util( $orig_master_handler->{dbh},
-#          $orig_master_handler->{connection_id} );
-#      }
+      my $time_until_kill_threads = 5;
+      @threads = get_threads_util( $orig_master_handler->{dbh},
+        $orig_master_handler->{connection_id} );
+      while ( $time_until_kill_threads > 0 && $#threads >= 0 ) {
+        if ( $time_until_kill_threads % 5 == 0 ) {
+          printf
+"%s Waiting all running %d queries are disconnected.. (max %d milliseconds)\n",
+            current_time_us(), $#threads + 1, $time_until_kill_threads * 100;
+          if ( $#threads < 5 ) {
+            print Data::Dumper->new( [$_] )->Indent(0)->Terse(1)->Dump . "\n"
+              foreach (@threads);
+          }
+        }
+        sleep_until();
+        $_tstart = [gettimeofday];
+        $time_until_kill_threads--;
+        @threads = get_threads_util( $orig_master_handler->{dbh},
+          $orig_master_handler->{connection_id} );
+      }
 
       ## Terminating all threads
-#      print current_time_us() . " Killing all application threads..\n";
-#      $orig_master_handler->kill_threads(@threads) if ( $#threads >= 0 );
-#      print current_time_us() . " done.\n";
-#      $orig_master_handler->enable_log_bin_local();
-#      $orig_master_handler->disconnect();
+      print current_time_us() . " Killing all application threads..\n";
+      $orig_master_handler->kill_threads(@threads) if ( $#threads >= 0 );
+      print current_time_us() . " done.\n";
+      $orig_master_handler->enable_log_bin_local();
+      $orig_master_handler->disconnect();
 
       ## After finishing the script, MHA executes FLUSH TABLES WITH READ LOCK
       $exit_code = 0;
@@ -243,7 +246,7 @@ sub main {
 
       ## Creating an app user on the new master
       print current_time_us() . " Creating app user on the new master..\n";
-      FIXME_xxx_create_app_user($new_master_handler);
+      #FIXME_xxx_create_app_user($new_master_handler);
       $new_master_handler->enable_log_bin_local();
       $new_master_handler->disconnect();
 
@@ -272,3 +275,4 @@ sub usage {
 "Usage: master_ip_online_change --command=start|stop|status --orig_master_host=host --orig_master_ip=ip --orig_master_port=port --new_master_host=host --new_master_ip=ip --new_master_port=port\n";
   die;
 }
+
