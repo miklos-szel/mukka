@@ -54,8 +54,8 @@ GetOptions(
   'orig_master_is_new_slave=s'  => \$orig_master_is_new_slave,
 );
 #getopts escapes the chars like $ which can be present in the password (just as \)
-$orig_master_password =~ s/\\//;
-$new_master_password =~ s/\\//;
+#$orig_master_password =~ s/\\//;
+#$new_master_password =~ s/\\//;
 
 exit &main();
 
