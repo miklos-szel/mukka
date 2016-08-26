@@ -1,4 +1,3 @@
-[root@prod-mysql-ansible3-i-a61bfdaa no_pk]# cat no_pk.sh
 #!/bin/bash
 MYSQLUSER="root"
 MYSQLPASS=""
