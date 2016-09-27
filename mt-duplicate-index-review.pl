@@ -52,14 +52,13 @@ options:
 IMPACT: It WON'T MAKE ANY CHANGES just print hints however accessing table statistics require opening the tables
 
 example:
-$0 --execute --user=review --passwd=xxx --host=127.0.0.1 --port=3336
+$0 --execute --user=review --password=xxx --host=127.0.0.1 --port=3336
 EOF
 exit 1;
 }
 
 
 my @dk_nc=`$pt_dk h=$mysql_host,u=$mysql_user,p=$mysql_passwd,P=$mysql_port --no-cluster|grep ALTER`;
-#my @dk_c=`$pt_dk --cluster|grep "ADD INDEX"`;
 print "DB,TABLE,REDUNDANT INDEX NAME,TABLE DATA SIZE[MB],TABLE INDEX SIZE[MB],NUM ROWS,RECOMMENDED METHOD,FOREIGN KEYS\n" if $report == 1;
 
 foreach my $index (@dk_nc){
@@ -70,15 +69,15 @@ foreach my $index (@dk_nc){
         if ($2 ne $table){
 		    ($data_size,$index_size,$num_rows) = &get_table_size($curr_db,$curr_table);
             $table = $2;
-            $fks = &get_fk_for_table($curr_db,$curr_table); 
+            $fks = &get_fk_for_table($curr_db,$curr_table);
         }
 
 	    if ( (($data_size+$index_size) >= $data_size_limit) or ($num_rows >= $num_rows_limit) ){
-		   	
+
 			print "$curr_db,$curr_table,$curr_index,$data_size,$index_size,$num_rows,PT-OSC,$fks\n";
-	            
+
         }else{
-			print "$curr_db,$curr_table,$curr_index,$data_size,$index_size,$num_rows,ALTER TABLE,-\n";
+			print "$curr_db,$curr_table,$curr_index,$data_size,$index_size,$num_rows,ALTER TABLE,$fks\n";
 		}
     }
 }
@@ -96,7 +95,7 @@ sub get_table_size{
 sub get_fk_for_table{
     my $db      = shift;
     my $table   = shift;
-    
+
     my $sql_fk="select CONCAT(CONSTRAINT_SCHEMA ,'.', CONSTRAINT_NAME, ';') FROM information_schema.key_column_usage  WHERE referenced_table_schema = '$db' and referenced_table_name = '$table';";
     my @fks=`$mysql_exe --user $mysql_user --password=\"$mysql_passwd\" --host $mysql_host --port  $mysql_port --skip-column-names -e "$sql_fk" `;
     chomp(@fks);
