@@ -22,7 +22,9 @@ fi
 datadir=$(mysql -NB  -h $from_ip --user=$db_user -p${db_pass} -e "SELECT @@datadir;")
 echo "2. Transferring buffer_pool from $from_ip to $to_ip"
 echo $datadir
-scp -o StrictHostKeyChecking=no $user@$from_ip:$datadir/ib_buffer_pool $user@$to_ip:$datadir/ib_buffer_pool
+scp -o StrictHostKeyChecking=no  -o UserKnownHostsFile=/dev/null $user@$from_ip:$datadir/ib_buffer_pool $user@$to_ip:$datadir/ib_buffer_pool
+ssh -o StrictHostKeyChecking=no $user@$to_ip chown mysql:mysql $datadir/ib_buffer_pool
+
 if [ $? -ne 0 ]
 then
     echo "Failed to transfer the buffer_pool file from $ip"
